@@ -1,0 +1,45 @@
+
+
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Confirmation - WatchCart</title>
+  <link rel="stylesheet" href="{% static 'css/checkout.css' %}">
+</head>
+<body>
+  <nav class="navbar">
+    <a class="navbar-brand" href="#">WATCHCART</a>
+    <div class="nav-links">
+      <a href="{% url 'index' %}"><button>Home</button></a>
+      <a href="{% url 'product_list' %}"><button>All Products</button></a>
+      <a href="{% url 'cart_view' %}"><button>Cart</button></a>
+      <a href="{% url 'profile' %}"><button>My Profile</button></a>
+      <a href="{% url 'logout' %}"><button>Logout</button></a>
+    </div>
+  </nav>
+
+  <div class="checkout-container">
+    <h1 class="checkout-heading">Order Confirmed</h1>
+    <p>Thank you for your order!</p>
+    <h2>Order Details</h2>
+    <p><strong>Order ID:</strong> {{ order.id }}</p>
+    <p><strong>Name:</strong> {{ order.name }}</p>
+    <p><strong>Shipping Address:</strong> {{ order.shipping_address|linebreaksbr }}</p>
+    <p><strong>Phone:</strong> {{ order.phone }}</p>
+    <p><strong>Payment Method:</strong> {{ order.get_payment_method_display }}</p>
+    <p><strong>Total Price:</strong> ₹{{ order.total_price }}</p>
+    <p><strong>Status:</strong> {{ order.status }}</p>
+    <h3>Items</h3>
+    <ul>
+      {% for item in order.items.all %}
+        <li>{{ item.product.name }} (Qty: {{ item.quantity }}) - ₹{{ item.product.offerprice }}</li>
+      {% endfor %}
+    </ul>
+    <a href="{% url 'index' %}" class="continue-shopping">Continue Shopping</a>
+  </div>
+</body>
+</html>
