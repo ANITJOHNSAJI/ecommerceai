@@ -6,6 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bookings</title>
     <link rel="stylesheet" href="{% static 'css/bookings.css' %}">
+    <style>
+        /* Add styling for status column */
+        .status-pending {
+            color: orange; /* Optional: Style Pending status */
+            font-weight: bold;
+        }
+        .status-confirmed {
+            color: green; /* Style Confirmed status in green */
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
     <!-- Sidebar -->
@@ -45,7 +56,9 @@
                 <td>{{ order.phone }}</td>
                 <td>{{ order.shipping_address }}</td>
                 <td>{{ order.payment_method }}</td>
-                <td>{{ order.status }}</td>
+                <td class="{% if order.status == 'Pending' %}status-pending{% else %}status-confirmed{% endif %}">
+                    {{ order.status }}
+                </td>
                 <td>{{ order.total_price }}</td>
                 <td>
                     {% for item in order.items.all %}

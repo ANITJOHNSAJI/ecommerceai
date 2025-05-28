@@ -1376,6 +1376,63 @@ def search_func(request):
         'user': request.user if request.user.is_authenticated else None
     })
 
+
+logger = logging.getLogger(__name__)
+
+@login_required(login_url='userlogin')
+def addReview(request, pk):
+    product = get_object_or_404(Product, pk=pk)
+    if request.method == 'POST':
+        rating = request.POST.get('rating')
+        description = request.POST.get('description', '').strip()
+        # Validate inputs
+        if not rating or not description:
+            messages.error(request, "Rating and review are required.")
+            return redirect('product', id=pk)
+        try:
+            rating = int(rating)
+            if rating < 1 or rating > 5:
+                raise ValueError("Rating must be between 1 and 5.")
+        except ValueError:
+            messages.error(request, "Invalid rating. Please select a rating between 1 and 5.")
+            return redirect('product', id=pk)
+        # Create review
+        user = users.objects.get(user=request.user)
+        data = reviews.objects.create(
+            rating=rating,
+            description=description,
+            uname=user,
+            pname=product
+        )
+        # Update product rating
+        rev = reviews.objects.filter(pname=product)
+        total = [i.rating for i in rev]
+        if total:
+            product.rating = round(sum(total) / len(total), 1)
+        else:
+            product.rating = rating
+        product.save()
+        # Vectorize reviews
+        pro_data = [{
+            "pro_id": product.id,
+            "name": product.name,
+            "rating": product.rating,
+            "type": product.type,
+            "description": product.description,
+            "reviews": ','.join([i.description for i in rev])
+        }]
+        df = pd.DataFrame(pro_data)
+        try:
+            product_vector = vectorize_product_with_reviews(df)
+            product.vector_data = json.dumps(product_vector[0].tolist())
+            product.save()
+        except Exception as e:
+            logger.error(f"Vectorization failed for product {product.id}: {e}")
+        messages.success(request, "Review submitted successfully!")
+        return redirect('product', id=pk)
+    return redirect('product', id=pk)
+
+
 def usersignup(request):
     if request.method == 'POST':
         email = request.POST.get('email')
@@ -1538,9 +1595,9 @@ Your order (ID: {order.id}) has been confirmed! Below are the details:
             except Exception as e:
                 print(f"Failed to send email: {e}")
         return redirect('admin_bookings')
-    orders = Order.objects.all().order_by('-date_ordered')
+    # Fetch both Pending and Confirmed orders
+    orders = Order.objects.filter(status__in=['Pending', 'Confirmed']).order_by('-date_ordered')
     return render(request, 'admin_bookings.html', {'orders': orders})
-
 def delete_g(request, id):
     product = get_object_or_404(Product, pk=id)
     product.delete()
